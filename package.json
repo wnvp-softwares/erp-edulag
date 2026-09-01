@@ -1,0 +1,27 @@
+{
+  "name": "erp-edulag",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.24.0",
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api start:dev",
+
+    "build": "pnpm build:web && pnpm build:api",
+    "build:web": "pnpm --filter web build",
+    "build:api": "pnpm --filter api build",
+
+    "lint": "pnpm lint:web && pnpm lint:api",
+    "lint:web": "pnpm --filter web lint",
+    "lint:api": "pnpm --filter api lint",
+
+    "test": "pnpm test:api",
+    "test:api": "pnpm --filter api test",
+
+    "db:generate": "pnpm --filter database db:generate",
+    "db:migrate:dev": "pnpm --filter database db:migrate:dev",
+    "db:migrate:deploy": "pnpm --filter database db:migrate:deploy",
+    "db:studio": "pnpm --filter database db:studio",
+    "db:validate": "pnpm --filter database db:validate"
+  }
+}
