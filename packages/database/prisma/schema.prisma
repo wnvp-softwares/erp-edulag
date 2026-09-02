@@ -6,8 +6,3 @@ generator client {
 datasource db {
   provider = "mysql"
 }
-
-model HealthCheck {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-}

@@ -1,0 +1,98 @@
+name: CI
+
+on:
+    push:
+        branches:
+            - "features/**"
+            - "fixes/**"
+
+    pull_request:
+        branches:
+            - dev
+            - main
+
+permissions:
+    contents: read
+
+concurrency:
+    group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    quality:
+        name: Quality checks
+
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        services:
+            mysql:
+                image: mysql:8.4
+
+                env:
+                    MYSQL_ROOT_PASSWORD: root
+                    MYSQL_DATABASE: erp_ci
+
+                ports:
+                    - 3306:3306
+
+                options: >-
+                    --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+                    --health-interval=10s
+                    --health-timeout=5s
+                    --health-retries=10
+
+        env:
+            DATABASE_URL: mysql://root:root@127.0.0.1:3306/erp_ci
+            SHADOW_DATABASE_URL: mysql://root:root@127.0.0.1:3306/erp_ci_shadow
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Setup pnpm and Node.js
+              uses: pnpm/setup@v2
+              with:
+                  runtime: node@24
+                  cache: true
+                  install: false
+
+            - name: Show versions
+              run: |
+                  node --version
+                  pnpm --version
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Enforce branch flow
+              env:
+                  EVENT_NAME: ${{ github.event_name }}
+                  BASE_REF: ${{ github.base_ref }}
+                  HEAD_REF: ${{ github.head_ref }}
+              run: |
+                  if [ "$EVENT_NAME" = "pull_request" ] && [ "$BASE_REF" = "main" ] && [ "$HEAD_REF" != "dev" ]; then
+                    echo "ERROR: Pull requests to main must come from dev."
+                    exit 1
+                  fi
+
+            - name: Validate Prisma schema
+              run: pnpm db:validate
+
+            - name: Generate Prisma Client
+              run: pnpm db:generate
+
+            - name: Apply migrations to CI database
+              run: pnpm db:migrate:deploy
+
+            - name: Verify migration status
+              run: pnpm --filter database exec prisma migrate status
+
+            - name: Lint
+              run: pnpm lint
+
+            - name: Test
+              run: pnpm test
+
+            - name: Build
+              run: pnpm build

@@ -7,9 +7,10 @@
     "dev:web": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api start:dev",
 
-    "build": "pnpm build:web && pnpm build:api",
+    "build": "pnpm db:generate && pnpm build:database && pnpm build:web && pnpm build:api",
     "build:web": "pnpm --filter web build",
     "build:api": "pnpm --filter api build",
+    "build:database": "pnpm --filter database build",
 
     "lint": "pnpm lint:web && pnpm lint:api",
     "lint:web": "pnpm --filter web lint",
